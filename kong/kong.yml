@@ -1,0 +1,52 @@
+_format_version: "3.0"
+_transform: true
+
+# ===== Service (l'API à protéger) =====
+services:
+  - name: api-service
+    url: http://api:5000
+    routes:
+      - name: api-route
+        paths:
+          - /api
+        strip_path: true
+
+# ===== Consumer (Keycloak, qui émet les tokens) =====
+consumers:
+  - username: keycloak
+
+# ===== Credential JWT pour le consumer =====
+jwt_secrets:
+  - consumer: keycloak
+    key: "http://localhost:8080/realms/api-securise"
+    algorithm: RS256
+    rsa_public_key: |
+      -----BEGIN PUBLIC KEY-----
+      MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwYgtdgbEWgOwWdPCkUuX
+      iC1bNzYrM8TqDmc+lCUAaqEXQbhq/qpJlih1Z7mztMdWsWGDR903XoHN8dQKwWhE
+      fWHgvMAcY7tvdgGCbdfXOEkL/vhkm8mlEttHJsrUu4jfNvbLuFx86x4RED956kyU
+      4EGyiLNIVLHHZNk1kY5QmSJfODB19OGmj5JT0PYYqdjJbxnqkhspwnMGFNB6QqUk
+      43BYTaZoHGlq3jeLXCCjJED2Z82cgDOam5nDAmpnHFacY2rY31s/HrsdT4WmMdyd
+      boTTk+RLn5GoOhR3UXdQxjW5QJetBVjSlIUSolU7TwSxvMJ9e8QV7IZiWQmEVgd0
+      4QIDAQAB
+      -----END PUBLIC KEY-----
+
+# ===== Plugins globaux (à appliquer sur la route) =====
+plugins:
+  - name: jwt
+    route: api-route
+    config:
+      claims_to_verify:
+        - exp
+      header_names:
+        - authorization
+      key_claim_name: iss
+      run_on_preflight: true
+
+  - name: rate-limiting
+    route: api-route
+    config:
+      minute: 5
+      policy: local
+      fault_tolerant: true
+      hide_client_headers: false

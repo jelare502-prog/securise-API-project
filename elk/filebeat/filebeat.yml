@@ -1,0 +1,26 @@
+filebeat.inputs:
+  # Logs du WAF (Nginx + ModSecurity)
+  - type: container
+    paths:
+      - /var/lib/docker/containers/*/*.log
+    processors:
+      - add_docker_metadata: ~
+
+# Envoi vers Elasticsearch
+output.elasticsearch:
+  hosts: ["http://elasticsearch:9200"]
+  index: "filebeat-%{+yyyy.MM.dd}"
+
+# Configuration Kibana (pour les dashboards)
+setup.kibana:
+  host: "http://kibana:5601"
+
+# Templates et dashboards
+setup.template.enabled: true
+setup.template.name: "filebeat"
+setup.template.pattern: "filebeat-*"
+
+# Logs internes de Filebeat
+logging.level: info
+logging.to_files: false
+logging.to_stderr: true
